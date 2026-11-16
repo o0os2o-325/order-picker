@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>사업평가회 발표 순서 추첨</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pretendard / Noto Sans KR 웹폰트 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* 쫘라락 순차 등장 스프링 애니메이션 */
+        @keyframes cascadePop {
+            0% {
+                opacity: 0;
+                transform: translateY(14px) scale(0.95);
+            }
+            65% {
+                opacity: 1;
+                transform: translateY(-2px) scale(1.015);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-cascade-pop {
+            animation: cascadePop 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* 짧은 셔플 흔들림 효과 */
+        @keyframes slotShuffle {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .animate-slot-shuffle {
+            animation: slotShuffle 0.12s linear infinite;
+        }
+
+        /* 폭죽 파티클 캔버스 */
+        #confetti-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 60;
+        }
+    </style>
+</head>
+<body class="app-shell flex flex-col bg-slate-50 text-slate-900">
+    <!-- 축하 폭죽 효과 캔버스 -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- 상단 고정 헤더 -->
+    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm shadow-indigo-600/25 shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </div>
+                <div class="truncate">
+                    <span class="text-[10px] font-extrabold tracking-wider text-indigo-600 uppercase block leading-none mb-0.5">총 9개 팀 · 즉시 배정</span>
+                    <h1 class="text-base sm:text-lg font-black tracking-tight text-slate-900 truncate">사업평가회 발표 순서 추첨</h1>
+                </div>
+            </div>
+
+            <!-- 효과음 & 진동 토글 버튼 -->
+            <button id="sound-toggle-btn" type="button" class="min-w-[44px] min-h-[44px] px-2.5 rounded-xl bg-slate-100 active:bg-slate-200 text-slate-700 flex items-center justify-center gap-1 border border-slate-200 transition" aria-label="효과음 켜기 또는 끄기">
+                <svg id="sound-on-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="sound-off-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+                <span id="sound-label" class="text-xs font-extrabold">소리 ON</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 알림 토스트 배너 -->
+    <div id="toast-container" class="fixed top-16 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-xs pointer-events-none transition-all duration-300 opacity-0 -translate-y-2">
+        <div class="bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-xl flex items-center justify-center gap-2 font-bold text-xs sm:text-sm text-center">
+            <span id="toast-icon">✅</span>
+            <span id="toast-message">알림 메시지</span>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠: 단일 화면 9개 슬롯 리스트 -->
+    <main class="flex-1 w-full max-w-md mx-auto px-4 pt-3 pb-28 flex flex-col">
+        <!-- 상단 상태 요약 바 -->
+        <div class="flex items-center justify-between mb-2.5 px-0.5">
+            <div class="flex items-center gap-1.5">
+                <span id="status-dot" class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                <span id="status-text" class="text-xs sm:text-sm font-extrabold text-slate-700">참여 9개 팀 확인 · 추첨 대기 중</span>
+            </div>
+            <span id="progress-badge" class="px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-[11px] font-extrabold">
+                0 / 9 확정
+            </span>
+        </div>
+
+        <!-- 1번 ~ 9번 순서 슬롯 카드 목록 -->
+        <div id="slots-container" class="space-y-2">
+            <!-- JS로 9개 슬롯 렌더링 -->
+        </div>
+    </main>
+
+    <!-- 하단 고정 엄지손가락 최적화 액션 바 -->
+    <footer class="fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-3 shadow-[0_-4px_20px_rgba(15,23,42,0.06)]">
+        <div class="max-w-md mx-auto">
+            <!-- [상태 1] 추첨 전 / 추첨 진행 중 메인 CTA 버튼 -->
+            <button id="draw-once-btn" type="button" class="w-full min-h-[56px] py-3.5 px-5 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-700 active:from-indigo-500 active:to-blue-600 text-white font-black text-base sm:text-lg rounded-2xl shadow-lg shadow-indigo-600/30 transition transform active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+                <span id="draw-btn-icon" class="text-xl">🎲</span>
+                <span id="draw-btn-text">한번에 순서 추첨하기</span>
+            </button>
+
+            <!-- [상태 2] 추첨 완료 후 공유 · 복사 · 다시 추첨 버튼 그룹 -->
+            <div id="post-draw-actions" class="hidden grid grid-cols-12 gap-2">
+                <button id="share-result-btn" type="button" class="col-span-5 min-h-[54px] py-3 px-3 bg-indigo-600 active:bg-indigo-500 text-white font-black text-sm rounded-2xl shadow-md shadow-indigo-600/20 transition transform active:scale-[0.98] flex items-center justify-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    <span>공유하기</span>
+                </button>
+
+                <button id="copy-result-btn" type="button" class="col-span-4 min-h-[54px] py-3 px-2.5 bg-slate-800 active:bg-slate-700 text-white font-extrabold text-sm rounded-2xl transition transform active:scale-[0.98] flex items-center justify-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>결과 복사</span>
+                </button>
+
+                <button id="redraw-btn" type="button" class="col-span-3 min-h-[54px] py-3 px-2 bg-slate-100 active:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm rounded-2xl border border-slate-300 transition transform active:scale-[0.98] flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>다시</span>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 클립보드 복사 헬퍼 -->
+    <textarea id="clipboard-helper" class="sr-only" aria-hidden="true"></textarea>
+
+    <script>
+        /**
+         * 사업평가회 발표 순서 제비뽑기 - 원탭 순차 공개(쫘라락) 버전
+         * - 9개 고정 명단 기본 표시
+         * - '한번에 순서 추첨하기' 버튼 클릭 시 짧은 셔플 후 1번부터 9번까지 145ms 간격으로 순차 공개
+         * - Web Audio API 내장 신디사이저(외부 CDN 무의존) & 모바일 진동 피드백
+         */
+        document.addEventListener('DOMContentLoaded', () => {
+            const FIXED_TEAMS = [
+                "운영지원팀",
+                "기능향상지원팀",
+                "사례권익옹호팀",
+                "발달장애인자립지원팀",
+                "직업지원팀",
+                "기획자원개발팀",
+                "문화예술지원팀",
+                "지역사회지원1팀",
+                "지역사회지원2팀"
+            ];
+
+            const state = {
+                phase: 'ready', // 'ready' | 'shuffling' | 'revealing' | 'done'
+                finalOrder: [],
+                revealedCount: 0,
+                soundEnabled: true,
+                redrawArmed: false,
+                redrawTimer: null
+            };
+
+            const els = {
+                slotsContainer: document.getElementById('slots-container'),
+                statusDot: document.getElementById('status-dot'),
+                statusText: document.getElementById('status-text'),
+                progressBadge: document.getElementById('progress-badge'),
+
+                drawOnceBtn: document.getElementById('draw-once-btn'),
+                drawBtnIcon: document.getElementById('draw-btn-icon'),
+                drawBtnText: document.getElementById('draw-btn-text'),
+
+                postDrawActions: document.getElementById('post-draw-actions'),
+                shareResultBtn: document.getElementById('share-result-btn'),
+                copyResultBtn: document.getElementById('copy-result-btn'),
+                redrawBtn: document.getElementById('redraw-btn'),
+
+                soundToggleBtn: document.getElementById('sound-toggle-btn'),
+                soundOnIcon: document.getElementById('sound-on-icon'),
+                soundOffIcon: document.getElementById('sound-off-icon'),
+                soundLabel: document.getElementById('sound-label'),
+
+                toastContainer: document.getElementById('toast-container'),
+                toastIcon: document.getElementById('toast-icon'),
+                toastMessage: document.getElementById('toast-message'),
+                clipboardHelper: document.getElementById('clipboard-helper'),
+                confettiCanvas: document.getElementById('confetti-canvas')
+            };
+
+            // ==========================================
+            // 1. Web Audio API 내장 효과음 & 진동 피드백
+            // ==========================================
+            let audioCtx = null;
+
+            function ensureAudioContext() {
+                if (!state.soundEnabled) return null;
+                try {
+                    if (!audioCtx) {
+                        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContextClass) {
+                            audioCtx = new AudioContextClass();
+                        }
+                    }
+                    if (audioCtx && audioCtx.state === 'suspended') {
+                        audioCtx.resume();
+                    }
+                } catch (e) {
+                    // 브라우저 오디오 제한 무시
+                }
+                return audioCtx;
+            }
+
+            function triggerHaptic(pattern) {
+                try {
+                    if (navigator.vibrate) {
+                        navigator.vibrate(pattern);
+                    }
+                } catch (e) {}
+            }
+
+            function playShuffleTick(step) {
+                const ctx = ensureAudioContext();
+                if (!ctx) return;
+                try {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(320 + (step % 4) * 55, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.045);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.05);
+                } catch (e) {}
+            }
+
+            function playCascadeNote(index) {
+                triggerHaptic(15);
+                const ctx = ensureAudioContext();
+                if (!ctx) return;
+                // 1번부터 9번까지 경쾌하게 상승하는 펜타토닉 스케일 (Hz)
+                const scaleFreqs = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51, 1567.98];
+                const freq = scaleFreqs[index % scaleFreqs.length];
+                try {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.19);
+                } catch (e) {}
+            }
+
+            function playFinishFanfare() {
+                triggerHaptic([35, 50, 70]);
+                const ctx = ensureAudioContext();
+                if (!ctx) return;
+                const chord = [523.25, 659.25, 783.99, 1046.50]; // C Major
+                try {
+                    chord.forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        const startTime = ctx.currentTime + i * 0.04;
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        gain.gain.setValueAtTime(0.09, startTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.55);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.56);
+                    });
+                } catch (e) {}
+            }
+
+            // ==========================================
+            // 2. 토스트 메시지 & 축하 폭죽 애니메이션
+            // ==========================================
+            let toastTimer = null;
+            function showToast(message, icon = "✅") {
+                els.toastIcon.textContent = icon;
+                els.toastMessage.textContent = message;
+                els.toastContainer.classList.remove('opacity-0', '-translate-y-2');
+                els.toastContainer.classList.add('opacity-100', 'translate-y-0');
+
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    els.toastContainer.classList.remove('opacity-100', 'translate-y-0');
+                    els.toastContainer.classList.add('opacity-0', '-translate-y-2');
+                }, 2400);
+            }
+
+            function launchConfetti() {
+                const canvas = els.confettiCanvas;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const colors = ['#4f46e5', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+                const particles = Array.from({ length: 75 }, () => ({
+                    x: canvas.width * (0.2 + Math.random() * 0.6),
+                    y: canvas.height * 0.45,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: -Math.random() * 11 - 4,
+                    size: Math.random() * 7 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    vRot: (Math.random() - 0.5) * 14
+                }));
+
+                let frame = 0;
+                function animate() {
+                    frame++;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let active = false;
+
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.35; // 중력
+                        p.rotation += p.vRot;
+
+                        if (p.y < canvas.height + 30) {
+                            active = true;
+                            ctx.save();
+                            ctx.translate(p.x, p.y);
+                            ctx.rotate((p.rotation * Math.PI) / 180);
+                            ctx.fillStyle = p.color;
+                            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                            ctx.restore();
+                        }
+                    });
+
+                    if (active && frame < 110) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+
+            // ==========================================
+            // 3. 슬롯 UI 렌더링 (추첨 대기 / 셔플 / 확정 상태)
+            // ==========================================
+            function getRankBadgeStyle(orderNum) {
+                if (orderNum === 1) {
+                    return "bg-amber-400 text-slate-950 ring-2 ring-amber-300/70 shadow-sm";
+                }
+                if (orderNum === 2) {
+                    return "bg-indigo-600 text-white shadow-sm";
+                }
+                if (orderNum === 3) {
+                    return "bg-blue-600 text-white shadow-sm";
+                }
+                return "bg-slate-800 text-white";
+            }
+
+            function renderReadyList() {
+                els.slotsContainer.innerHTML = '';
+                FIXED_TEAMS.forEach((teamName, idx) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200/90 shadow-xs";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-400 border border-slate-200 font-black text-sm flex items-center justify-center shrink-0">
+                                ?
+                            </span>
+                            <span class="text-sm sm:text-base font-bold text-slate-800 truncate">${teamName}</span>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-bold shrink-0">
+                            추첨 대기
+                        </span>
+                    `;
+                    els.slotsContainer.appendChild(row);
+                });
+
+                els.statusDot.className = "w-2 h-2 rounded-full bg-indigo-500";
+                els.statusText.textContent = "참여 9개 팀 확인 · 추첨 대기 중";
+                els.progressBadge.textContent = "0 / 9 확정";
+                els.progressBadge.className = "px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700 text-[11px] font-extrabold";
+
+                els.drawOnceBtn.classList.remove('hidden');
+                els.drawOnceBtn.disabled = false;
+                els.drawBtnIcon.textContent = "🎲";
+                els.drawBtnText.textContent = "한번에 순서 추첨하기";
+                els.postDrawActions.classList.add('hidden');
+            }
+
+            function renderShufflingFrame(tick) {
+                els.slotsContainer.innerHTML = '';
+                for (let i = 0; i < 9; i++) {
+                    const randomTeam = FIXED_TEAMS[(i + tick * 2 + Math.floor(Math.random() * 9)) % 9];
+                    const row = document.createElement('div');
+                    row.className = "flex items-center justify-between bg-indigo-50/70 px-3.5 py-2.5 rounded-2xl border border-indigo-200 animate-slot-shuffle";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-8 h-8 rounded-xl bg-indigo-600 text-white font-black text-sm flex items-center justify-center shrink-0">
+                                ${i + 1}
+                            </span>
+                            <span class="text-sm sm:text-base font-extrabold text-indigo-900/75 blur-[0.4px] truncate">${randomTeam}</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-600 text-[11px] font-extrabold shrink-0">
+                            추첨 중...
+                        </span>
+                    `;
+                    els.slotsContainer.appendChild(row);
+                }
+            }
+
+            function initializeRevealSkeleton() {
+                els.slotsContainer.innerHTML = '';
+                for (let i = 0; i < 9; i++) {
+                    const row = document.createElement('div');
+                    row.id = `result-slot-${i}`;
+                    row.className = "flex items-center justify-between bg-slate-100/80 px-3.5 py-2.5 rounded-2xl border border-slate-200/70 transition-colors";
+                    row.innerHTML = `
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="w-8 h-8 rounded-xl bg-slate-200 text-slate-500 font-black text-sm flex items-center justify-center shrink-0">
+                                ${i + 1}
+                            </span>
+                            <span class="text-sm font-bold text-slate-400">순서 배정 대기...</span>
+                        </div>
+                    `;
+                    els.slotsContainer.appendChild(row);
+                }
+            }
+
+            function revealSingleSlot(index) {
+                const orderNum = index + 1;
+                const teamName = state.finalOrder[index];
+                const slotEl = document.getElementById(`result-slot-${index}`);
+                if (!slotEl) return;
+
+                const isTopRank = orderNum === 1;
+                slotEl.className = `flex items-center justify-between px-3.5 py-2.5 rounded-2xl border shadow-sm animate-cascade-pop ${
+                    isTopRank
+                        ? "bg-amber-50/90 border-amber-300"
+                        : "bg-white border-slate-200"
+                }`;
+
+                slotEl.innerHTML = `
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl ${getRankBadgeStyle(orderNum)} font-black text-sm sm:text-base flex items-center justify-center shrink-0">
+                            ${orderNum}
+                        </span>
+                        <div class="truncate">
+                            <span class="text-base sm:text-[17px] font-black text-slate-900 tracking-tight truncate block">
+                                ${teamName}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg ${
+                        isTopRank
+                            ? "bg-amber-200/80 text-amber-900"
+                            : "bg-indigo-50 text-indigo-700"
+                    } text-xs font-black shrink-0">
+                        ${orderNum}번 발표
+                    </span>
+                `;
+
+                els.progressBadge.textContent = `${orderNum} / 9 확정`;
+            }
+
+            // ==========================================
+            // 4. Fisher-Yates 무작위 셔플 & 한번에 추첨 실행
+            // ==========================================
+            function shuffleTeams(list) {
+                const arr = [...list];
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            async function runOneTapCascadeDraw() {
+                if (state.phase === 'shuffling' || state.phase === 'revealing') return;
+
+                ensureAudioContext();
+                state.phase = 'shuffling';
+                state.finalOrder = shuffleTeams(FIXED_TEAMS);
+                state.revealedCount = 0;
+
+                // 버튼 비활성화 및 상태 표시 업데이트
+                els.drawOnceBtn.classList.remove('hidden');
+                els.drawOnceBtn.disabled = true;
+                els.postDrawActions.classList.add('hidden');
+                els.drawBtnIcon.textContent = "⏳";
+                els.drawBtnText.textContent = "순서 추첨 진행 중...";
+
+                els.statusDot.className = "w-2 h-2 rounded-full bg-amber-500 animate-ping";
+                els.statusText.textContent = "무작위 순서 섞는 중...";
+
+                // 1단계: 약 0.55초간 빠른 슬롯 셔플 연출
+                let tick = 0;
+                renderShufflingFrame(tick);
+                playShuffleTick(tick);
+                const shuffleTimer = setInterval(() => {
+                    tick++;
+                    renderShufflingFrame(tick);
+                    playShuffleTick(tick);
+                }, 85);
+
+                await new Promise(resolve => setTimeout(resolve, 550));
+                clearInterval(shuffleTimer);
+
+                // 2단계: 1번부터 9번까지 145ms 간격으로 쫘라락 순차 공개
+                state.phase = 'revealing';
+                els.statusDot.className = "w-2 h-2 rounded-full bg-indigo-600 animate-pulse";
+                els.statusText.textContent = "발표 순서 공개 중...";
+                initializeRevealSkeleton();
+
+                for (let i = 0; i < state.finalOrder.length; i++) {
+                    revealSingleSlot(i);
+                    playCascadeNote(i);
+                    state.revealedCount = i + 1;
+                    await new Promise(resolve => setTimeout(resolve, 145));
+                }
+
+                // 3단계: 전체 추첨 완료 처리
+                state.phase = 'done';
+                els.statusDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+                els.statusText.textContent = "전체 9개 팀 발표 순서 확정 완료!";
+                els.progressBadge.textContent = "9 / 9 확정";
+                els.progressBadge.className = "px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black";
+
+                els.drawOnceBtn.classList.add('hidden');
+                els.postDrawActions.classList.remove('hidden');
+                resetRedrawConfirmState();
+
+                playFinishFanfare();
+                launchConfetti();
+            }
+
+            // ==========================================
+            // 5. 결과 포맷팅, 복사, 모바일 공유, 다시 추첨
+            // ==========================================
+            function getFormattedResultText() {
+                const lines = [
+                    "[사업평가회 발표 순서]",
+                    ...state.finalOrder.map((team, idx) => `${idx + 1}. ${team}`)
+                ];
+                return lines.join('\n');
+            }
+
+            function copyResultToClipboard() {
+                if (state.finalOrder.length === 0) return;
+
+                const text = getFormattedResultText();
+                els.clipboardHelper.value = text;
+                els.clipboardHelper.select();
+                els.clipboardHelper.setSelectionRange(0, 99999);
+
+                try {
+                    document.execCommand('copy');
+                    triggerHaptic(25);
+                    showToast("복사되었습니다! 카톡이나 회의록에 붙여넣으세요.", "📋");
+                } catch (err) {
+                    showToast("복사에 실패했습니다.", "⚠️");
+                }
+            }
+
+            async function shareResultNative() {
+                if (state.finalOrder.length === 0) return;
+
+                const text = getFormattedResultText();
+                if (navigator.share) {
+                    try {
+                        await navigator.share({
+                            title: '사업평가회 발표 순서',
+                            text: text
+                        });
+                        triggerHaptic(25);
+                    } catch (err) {
+                        // 공유 시트 취소 시 무시
+                    }
+                } else {
+                    copyResultToClipboard();
+                }
+            }
+
+            function resetRedrawConfirmState() {
+                state.redrawArmed = false;
+                if (state.redrawTimer) clearTimeout(state.redrawTimer);
+                els.redrawBtn.className = "col-span-3 min-h-[54px] py-3 px-2 bg-slate-100 active:bg-slate-200 text-slate-700 font-extrabold text-xs sm:text-sm rounded-2xl border border-slate-300 transition transform active:scale-[0.98] flex items-center justify-center gap-1";
+                els.redrawBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>다시</span>
+                `;
+            }
+
+            function handleRedrawClick() {
+                if (!state.redrawArmed) {
+                    state.redrawArmed = true;
+                    triggerHaptic(20);
+                    els.redrawBtn.className = "col-span-3 min-h-[54px] py-3 px-2 bg-rose-600 active:bg-rose-500 text-white font-black text-xs sm:text-sm rounded-2xl shadow-sm transition transform active:scale-[0.98] flex items-center justify-center";
+                    els.redrawBtn.textContent = "초기화?";
+                    showToast("실수 방지를 위해 한 번 더 누르면 초기화됩니다.", "🔄");
+
+                    state.redrawTimer = setTimeout(() => {
+                        resetRedrawConfirmState();
+                    }, 3000);
+                    return;
+                }
+
+                // 2번째 터치 시 즉시 대기 상태로 초기화
+                resetRedrawConfirmState();
+                state.phase = 'ready';
+                state.finalOrder = [];
+                state.revealedCount = 0;
+                renderReadyList();
+                triggerHaptic(30);
+                showToast("추첨 대기 상태로 초기화되었습니다.", "✅");
+            }
+
+            // ==========================================
+            // 6. 이벤트 바인딩 및 초기 실행
+            // ==========================================
+            els.drawOnceBtn.addEventListener('click', runOneTapCascadeDraw);
+            els.shareResultBtn.addEventListener('click', shareResultNative);
+            els.copyResultBtn.addEventListener('click', copyResultToClipboard);
+            els.redrawBtn.addEventListener('click', handleRedrawClick);
+
+            els.soundToggleBtn.addEventListener('click', () => {
+                state.soundEnabled = !state.soundEnabled;
+                if (state.soundEnabled) {
+                    els.soundOnIcon.classList.remove('hidden');
+                    els.soundOffIcon.classList.add('hidden');
+                    els.soundLabel.textContent = "소리 ON";
+                    ensureAudioContext();
+                    playCascadeNote(4);
+                } else {
+                    els.soundOnIcon.classList.add('hidden');
+                    els.soundOffIcon.classList.remove('hidden');
+                    els.soundLabel.textContent = "무음";
+                }
+            });
+
+            // 앱 시작 시 9개 팀 대기 목록 즉시 표시
+            renderReadyList();
+        });
+    </script>
+</body>
+</html>
